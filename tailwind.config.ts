@@ -26,7 +26,8 @@ export default {
 				foreground: 'hsl(var(--foreground))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
-					foreground: 'hsl(var(--primary-foreground))'
+					foreground: 'hsl(var(--primary-foreground))',
+					glow: 'hsl(var(--primary-glow))'
 				},
 				secondary: {
 					DEFAULT: 'hsl(var(--secondary))',
@@ -61,7 +62,29 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				gateway: {
+					success: 'hsl(var(--gateway-success))',
+					warning: 'hsl(var(--gateway-warning))',
+					error: 'hsl(var(--gateway-error))',
+					processing: 'hsl(var(--gateway-processing))'
 				}
+			},
+			backgroundImage: {
+				'gradient-primary': 'var(--gradient-primary)',
+				'gradient-success': 'var(--gradient-success)',
+				'gradient-hero': 'var(--gradient-hero)',
+				'gradient-card': 'var(--gradient-card)'
+			},
+			boxShadow: {
+				'gateway': 'var(--shadow-gateway)',
+				'card-gateway': 'var(--shadow-card)',
+				'success': 'var(--shadow-success)',
+				'glow': 'var(--shadow-glow)'
+			},
+			transitionTimingFunction: {
+				'gateway': 'var(--transition-gateway)',
+				'bounce-gateway': 'var(--transition-bounce)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
