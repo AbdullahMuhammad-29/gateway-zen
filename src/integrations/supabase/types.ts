@@ -55,6 +55,63 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_role: string | null
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
+      fraud_flags: {
+        Row: {
+          created_at: string
+          id: string
+          payment_id: string
+          reason: string
+          score: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payment_id: string
+          reason: string
+          score?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payment_id?: string
+          reason?: string
+          score?: number
+        }
+        Relationships: []
+      }
       merchants: {
         Row: {
           business_name: string
@@ -189,6 +246,30 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -213,6 +294,102 @@ export type Database = {
           role?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      settlements: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          merchant_id: string
+          processed_at: string | null
+          scheduled_for: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          merchant_id: string
+          processed_at?: string | null
+          scheduled_for?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          merchant_id?: string
+          processed_at?: string | null
+          scheduled_for?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      webhook_endpoints: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          last_delivered_at: string | null
+          merchant_id: string
+          secret: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_delivered_at?: string | null
+          merchant_id: string
+          secret: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_delivered_at?: string | null
+          merchant_id?: string
+          secret?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      webhook_events: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          delivered_at: string | null
+          delivery_status: string
+          id: string
+          merchant_id: string
+          payload: Json
+          type: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          delivered_at?: string | null
+          delivery_status?: string
+          id?: string
+          merchant_id: string
+          payload: Json
+          type: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          delivered_at?: string | null
+          delivery_status?: string
+          id?: string
+          merchant_id?: string
+          payload?: Json
+          type?: string
         }
         Relationships: []
       }
