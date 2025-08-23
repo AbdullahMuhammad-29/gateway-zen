@@ -6,6 +6,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import MerchantAuth from "./pages/MerchantAuth";
 import AdminAuth from "./pages/AdminAuth";
+import MerchantDashboard from "./pages/MerchantDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import DemoCheckout from "./pages/DemoCheckout";
+import Documentation from "./pages/Documentation";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,7 +24,10 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/merchant-auth" element={<MerchantAuth />} />
           <Route path="/admin-auth" element={<AdminAuth />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/merchant-dashboard" element={<MerchantDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/checkout/:sessionId" element={<DemoCheckout />} />
+          <Route path="/docs" element={<Documentation />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
