@@ -19,7 +19,11 @@ export default function AdminDashboard() {
   const [payments, setPayments] = useState([]);
   const [fraudFlags, setFraudFlags] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
-  const [platformSettings, setPlatformSettings] = useState({});
+  const [platformSettings, setPlatformSettings] = useState<{
+    fee_percentage?: string;
+    fee_fixed?: string;
+    fraud_high_value_threshold?: string;
+  }>({});
   const [stats, setStats] = useState({
     totalMerchants: 0,
     totalVolume: 0,
@@ -226,8 +230,8 @@ export default function AdminDashboard() {
     }).format(amount / 100);
   };
 
-  const getStatusBadge = (status) => {
-    const variants = {
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "destructive" | "secondary" | "outline" | "success" | "warning"> = {
       approved: 'success',
       pending: 'warning',
       blocked: 'destructive',

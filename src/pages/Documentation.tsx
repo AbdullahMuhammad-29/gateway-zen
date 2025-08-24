@@ -30,11 +30,16 @@ export default function Documentation() {
     </div>
   );
 
-  const EndpointCard = ({ method, path, description, children }) => (
+  const EndpointCard = ({ method, path, description, children }: {
+    method: string;
+    path: string;
+    description: string;
+    children: React.ReactNode;
+  }) => (
     <Card className="mb-4">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Badge variant={method === 'GET' ? 'secondary' : method === 'POST' ? 'success' : 'warning'}>
+          <Badge variant={method === 'GET' ? 'secondary' as const : method === 'POST' ? 'success' as const : 'warning' as const}>
             {method}
           </Badge>
           <code className="text-sm">{path}</code>

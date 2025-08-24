@@ -219,8 +219,8 @@ export default function MerchantDashboard() {
     }).format(amount / 100);
   };
 
-  const getStatusBadge = (status) => {
-    const variants = {
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "destructive" | "secondary" | "outline" | "success" | "warning"> = {
       succeeded: 'success',
       failed: 'destructive',
       processing: 'warning',
@@ -568,7 +568,7 @@ export default function MerchantDashboard() {
                 </div>
                 <div>
                   <Label>Status</Label>
-                  <Badge variant={merchant?.status === 'approved' ? 'success' : 'warning'}>
+                  <Badge variant={merchant?.status === 'approved' ? 'success' as const : 'warning' as const}>
                     {merchant?.status}
                   </Badge>
                 </div>
