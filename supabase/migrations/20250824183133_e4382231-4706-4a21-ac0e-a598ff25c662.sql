@@ -1,0 +1,25 @@
+-- Enable realtime for all tables
+ALTER TABLE public.merchants REPLICA IDENTITY FULL;
+ALTER TABLE public.payments REPLICA IDENTITY FULL;
+ALTER TABLE public.payment_sessions REPLICA IDENTITY FULL;
+ALTER TABLE public.fraud_flags REPLICA IDENTITY FULL;
+ALTER TABLE public.audit_logs REPLICA IDENTITY FULL;
+ALTER TABLE public.platform_settings REPLICA IDENTITY FULL;
+ALTER TABLE public.api_keys REPLICA IDENTITY FULL;
+ALTER TABLE public.webhook_endpoints REPLICA IDENTITY FULL;
+ALTER TABLE public.webhook_events REPLICA IDENTITY FULL;
+ALTER TABLE public.settlements REPLICA IDENTITY FULL;
+ALTER TABLE public.profiles REPLICA IDENTITY FULL;
+
+-- Add tables to realtime publication
+ALTER PUBLICATION supabase_realtime ADD TABLE public.merchants;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.payments;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.payment_sessions;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.fraud_flags;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_settings;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.api_keys;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.webhook_endpoints;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.webhook_events;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.settlements;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
