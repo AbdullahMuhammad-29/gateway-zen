@@ -10,52 +10,100 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Settings, Users, CreditCard, AlertTriangle, FileText, DollarSign, TrendingUp, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { RealtimeAdminStats } from '@/components/RealtimeAdminStats';
+
+interface Merchant {
+  id: string;
+  business_name: string;
+  status: string;
+  created_at: string;
+  website_url?: string;
+  profiles?: { email: string };
+}
+
+interface Payment {
+  id: string;
+  amount: number;
+  status: string;
+  method: string;
+  fee_amount: number;
+  created_at: string;
+  merchants?: { business_name: string };
+  payment_sessions?: { description: string };
+}
+
+interface FraudFlag {
+  id: string;
+  reason: string;
+  score: number;
+  created_at: string;
+  payments?: {
+    amount: number;
+    merchants?: { business_name: string };
+  };
+}
+
+interface AuditLog {
+  id: string;
+  actor_role: string;
+  action: string;
+  target_type: string;
+  metadata: any;
+  created_at: string;
+}
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState(null);
-  const [merchants, setMerchants] = useState([]);
-  const [payments, setPayments] = useState([]);
-  const [fraudFlags, setFraudFlags] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
+  const [user, setUser] = useState<any>(null);
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [fraudFlags, setFraudFlags] = useState<FraudFlag[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [platformSettings, setPlatformSettings] = useState<{
     fee_percentage?: string;
     fee_fixed?: string;
     fraud_high_value_threshold?: string;
   }>({});
-  const [stats, setStats] = useState({
-    totalMerchants: 0,
-    totalVolume: 0,
-    totalPayments: 0,
-    totalFees: 0
-  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     checkAuth();
     loadAdminData();
+    const cleanup = setupRealtimeListeners();
     
-    // Real-time updates
-    const channel = supabase
-      .channel('admin-dashboard')
-      .on('postgres_changes', {
+    return cleanup;
+  }, []);
+
+  const setupRealtimeListeners = () => {
+    // Listen to merchants changes
+    const merchantsChannel = supabase
+      .channel('admin-merchants')
+      .on('postgres_changes' as any, {
         event: '*',
         schema: 'public',
         table: 'merchants'
       }, () => {
         loadMerchants();
-        loadStats();
       })
-      .on('postgres_changes', {
+      .subscribe();
+
+    // Listen to payments changes
+    const paymentsChannel = supabase
+      .channel('admin-payments')
+      .on('postgres_changes' as any, {
         event: '*',
         schema: 'public',
         table: 'payments'
       }, () => {
         loadPayments();
-        loadStats();
       })
-      .on('postgres_changes', {
+      .subscribe();
+
+    // Listen to fraud flags changes
+    const fraudChannel = supabase
+      .channel('admin-fraud')
+      .on('postgres_changes' as any, {
         event: '*',
         schema: 'public',
         table: 'fraud_flags'
@@ -64,10 +112,39 @@ export default function AdminDashboard() {
       })
       .subscribe();
 
+    // Listen to audit logs changes
+    const auditChannel = supabase
+      .channel('admin-audit')
+      .on('postgres_changes' as any, {
+        event: '*',
+        schema: 'public',
+        table: 'audit_logs'
+      }, () => {
+        loadAuditLogs();
+      })
+      .subscribe();
+
+    // Listen to platform settings changes
+    const settingsChannel = supabase
+      .channel('admin-settings')
+      .on('postgres_changes' as any, {
+        event: '*',
+        schema: 'public',
+        table: 'platform_settings'
+      }, () => {
+        loadPlatformSettings();
+      })
+      .subscribe();
+
+    // Cleanup function will be handled by useEffect return
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(merchantsChannel);
+      supabase.removeChannel(paymentsChannel);
+      supabase.removeChannel(fraudChannel);
+      supabase.removeChannel(auditChannel);
+      supabase.removeChannel(settingsChannel);
     };
-  }, []);
+  };
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -96,8 +173,7 @@ export default function AdminDashboard() {
       loadPayments(),
       loadFraudFlags(),
       loadAuditLogs(),
-      loadPlatformSettings(),
-      loadStats()
+      loadPlatformSettings()
     ]);
     setLoading(false);
   };
@@ -105,10 +181,7 @@ export default function AdminDashboard() {
   const loadMerchants = async () => {
     const { data } = await supabase
       .from('merchants')
-      .select(`
-        *,
-        profiles (email)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
     setMerchants(data || []);
   };
@@ -116,11 +189,7 @@ export default function AdminDashboard() {
   const loadPayments = async () => {
     const { data } = await supabase
       .from('payments')
-      .select(`
-        *,
-        merchants (business_name),
-        payment_sessions (description)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(100);
     setPayments(data || []);
@@ -129,13 +198,7 @@ export default function AdminDashboard() {
   const loadFraudFlags = async () => {
     const { data } = await supabase
       .from('fraud_flags')
-      .select(`
-        *,
-        payments (
-          amount,
-          merchants (business_name)
-        )
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
     setFraudFlags(data || []);
   };
@@ -154,35 +217,14 @@ export default function AdminDashboard() {
       .from('platform_settings')
       .select('*');
     
-    const settings = {};
+    const settings: any = {};
     data?.forEach(setting => {
       settings[setting.key] = setting.value;
     });
     setPlatformSettings(settings);
   };
 
-  const loadStats = async () => {
-    const { data: merchantsData } = await supabase
-      .from('merchants')
-      .select('id');
-    
-    const { data: paymentsData } = await supabase
-      .from('payments')
-      .select('amount, fee_amount, status');
-    
-    const succeededPayments = paymentsData?.filter(p => p.status === 'succeeded') || [];
-    const totalVolume = succeededPayments.reduce((sum, p) => sum + p.amount, 0);
-    const totalFees = succeededPayments.reduce((sum, p) => sum + p.fee_amount, 0);
-    
-    setStats({
-      totalMerchants: merchantsData?.length || 0,
-      totalVolume,
-      totalPayments: succeededPayments.length,
-      totalFees
-    });
-  };
-
-  const updateMerchantStatus = async (merchantId, status) => {
+  const updateMerchantStatus = async (merchantId: string, status: string) => {
     const { error } = await supabase
       .from('merchants')
       .update({ status })
@@ -205,11 +247,10 @@ export default function AdminDashboard() {
         metadata: { new_status: status }
       });
 
-    loadMerchants();
     toast({ title: "Success", description: `Merchant status updated to ${status}` });
   };
 
-  const updatePlatformSetting = async (key, value) => {
+  const updatePlatformSetting = async (key: string, value: string) => {
     const { error } = await supabase
       .from('platform_settings')
       .upsert({ key, value }, { onConflict: 'key' });
@@ -219,11 +260,10 @@ export default function AdminDashboard() {
       return;
     }
 
-    loadPlatformSettings();
     toast({ title: "Success", description: "Setting updated" });
   };
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
@@ -248,7 +288,14 @@ export default function AdminDashboard() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Activity className="h-8 w-8 animate-pulse mx-auto mb-4 text-primary" />
+          <p>Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -277,47 +324,7 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Merchants</CardTitle>
-                  <Users className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalMerchants}</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Volume</CardTitle>
-                  <DollarSign className="h-4 w-4 text-accent" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(stats.totalVolume)}</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-success/5 to-success/10 border-success/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Payments</CardTitle>
-                  <CreditCard className="h-4 w-4 text-success" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalPayments}</div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-gradient-to-br from-warning/5 to-warning/10 border-warning/20">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Platform Revenue</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-warning" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{formatCurrency(stats.totalFees)}</div>
-                </CardContent>
-              </Card>
-            </div>
+            <RealtimeAdminStats />
 
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
@@ -356,6 +363,9 @@ export default function AdminDashboard() {
                         <Badge variant="destructive">Score: {flag.score}</Badge>
                       </div>
                     ))}
+                    {fraudFlags.length === 0 && (
+                      <p className="text-sm text-muted-foreground">No fraud alerts</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>

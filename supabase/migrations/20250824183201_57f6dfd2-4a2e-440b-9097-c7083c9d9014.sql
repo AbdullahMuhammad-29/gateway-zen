@@ -1,0 +1,12 @@
+-- Enable realtime for all tables
+ALTER TABLE public.merchants REPLICA IDENTITY FULL;
+ALTER TABLE public.payments REPLICA IDENTITY FULL;
+ALTER TABLE public.payment_sessions REPLICA IDENTITY FULL;
+ALTER TABLE public.fraud_flags REPLICA IDENTITY FULL;
+ALTER TABLE public.audit_logs REPLICA IDENTITY FULL;
+ALTER TABLE public.platform_settings REPLICA IDENTITY FULL;
+ALTER TABLE public.api_keys REPLICA IDENTITY FULL;
+ALTER TABLE public.webhook_endpoints REPLICA IDENTITY FULL;
+ALTER TABLE public.webhook_events REPLICA IDENTITY FULL;
+ALTER TABLE public.settlements REPLICA IDENTITY FULL;
+ALTER TABLE public.profiles REPLICA IDENTITY FULL;
