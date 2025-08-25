@@ -45,8 +45,11 @@ const AdminAuth = () => {
     setIsLoading(true);
     setError("");
 
+    console.log('Admin auth attempt:', { isSignUp, email });
+
     try {
       if (isSignUp) {
+        console.log('Attempting admin signup...');
         // Sign up with admin role
         const { data, error: authError } = await supabase.auth.signUp({
           email,
@@ -59,6 +62,8 @@ const AdminAuth = () => {
           }
         });
 
+        console.log('Signup result:', { data, authError });
+
         if (authError) throw authError;
 
         toast({
@@ -66,23 +71,30 @@ const AdminAuth = () => {
           description: "Admin account created! Please check your email to verify.",
         });
       } else {
+        console.log('Attempting admin signin...');
         // Sign in
         const { data, error: authError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
+        console.log('Signin result:', { data, authError });
+
         if (authError) throw authError;
 
         if (data.user) {
+          console.log('User signed in, checking admin role...');
           // Check if user is an admin
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('user_id', data.user.id)
             .single();
           
+          console.log('Profile check:', { profile, profileError });
+          
           if (profile?.role === 'admin') {
+            console.log('Admin role verified, navigating to dashboard...');
             navigate('/admin-dashboard');
           } else {
             throw new Error('Access denied. Admin privileges required.');
@@ -90,6 +102,7 @@ const AdminAuth = () => {
         }
       }
     } catch (err: any) {
+      console.error('Admin auth error:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);
