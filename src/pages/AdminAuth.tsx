@@ -16,6 +16,7 @@ const AdminAuth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -39,31 +40,53 @@ const AdminAuth = () => {
     checkAuth();
   }, [navigate]);
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      if (isSignUp) {
+        // Sign up with admin role
+        const { data, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/admin-dashboard`,
+            data: {
+              role: 'admin'
+            }
+          }
+        });
 
-      if (authError) throw authError;
+        if (authError) throw authError;
 
-      if (data.user) {
-        // Check if user is an admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .single();
-        
-        if (profile?.role === 'admin') {
-          navigate('/admin-dashboard');
-        } else {
-          throw new Error('Access denied. Admin privileges required.');
+        toast({
+          title: "Success",
+          description: "Admin account created! Please check your email to verify.",
+        });
+      } else {
+        // Sign in
+        const { data, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (authError) throw authError;
+
+        if (data.user) {
+          // Check if user is an admin
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('user_id', data.user.id)
+            .single();
+          
+          if (profile?.role === 'admin') {
+            navigate('/admin-dashboard');
+          } else {
+            throw new Error('Access denied. Admin privileges required.');
+          }
         }
       }
     } catch (err: any) {
@@ -109,7 +132,7 @@ const AdminAuth = () => {
                 </Alert>
               )}
 
-              <form onSubmit={handleSignIn} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="admin-email">Admin Email</Label>
                   <div className="relative">
@@ -148,7 +171,18 @@ const AdminAuth = () => {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Signing in..." : "Admin Sign In"}
+                  {isLoading ? "Processing..." : (isSignUp ? "Create Admin Account" : "Admin Sign In")}
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setIsSignUp(!isSignUp)}
+                  disabled={isLoading}
+                >
+                  {isSignUp ? "Already have an account? Sign In" : "Need to create admin account? Sign Up"}
                 </Button>
               </form>
 
@@ -158,6 +192,9 @@ const AdminAuth = () => {
                 <div className="text-xs text-muted-foreground space-y-1">
                   <div>Email: admin@gateway-zen.com</div>
                   <div>Password: Admin@123</div>
+                  <div className="text-gateway-success mt-2">
+                    {isSignUp ? "Use these credentials to create the admin account" : "Use these credentials to sign in"}
+                  </div>
                 </div>
               </div>
             </div>
