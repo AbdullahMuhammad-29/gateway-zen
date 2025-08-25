@@ -13,10 +13,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AdminAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("admin@gateway-zen.com");
+  const [password, setPassword] = useState("Admin@123");
   const [error, setError] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(true); // Default to signup mode
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -128,11 +128,11 @@ const AdminAuth = () => {
             <div>
               <CardTitle className="text-2xl">Admin Portal</CardTitle>
               <CardDescription className="text-base">
-                Manage the payment gateway platform
+                {isSignUp ? "Create your admin account" : "Manage the payment gateway platform"}
               </CardDescription>
             </div>
             <Badge variant="outline" className="text-gateway-success border-gateway-success/30 w-fit mx-auto">
-              Admin Only
+              {isSignUp ? "Create Admin Account" : "Admin Only"}
             </Badge>
           </CardHeader>
           
