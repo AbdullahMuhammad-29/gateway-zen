@@ -13,31 +13,27 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AdminAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("admin@example.org");
-  const [password, setPassword] = useState("Admin@123");
+  const [email, setEmail] = useState("admin");
+  const [password, setPassword] = useState("Admin123");
   const [error, setError] = useState("");
-  const [isSignUp, setIsSignUp] = useState(true); // Default to signup mode
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Check if user is an admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        if (profile?.role === 'admin') {
+    // Check if admin is already logged in via localStorage
+    const adminSession = localStorage.getItem('admin_session');
+    if (adminSession) {
+      try {
+        const session = JSON.parse(adminSession);
+        if (session.role === 'admin' && session.expires > Date.now()) {
           navigate('/admin-dashboard');
+        } else {
+          localStorage.removeItem('admin_session');
         }
+      } catch (err) {
+        localStorage.removeItem('admin_session');
       }
-    };
-    checkAuth();
+    }
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,65 +41,47 @@ const AdminAuth = () => {
     setIsLoading(true);
     setError("");
 
-    console.log('Admin auth attempt:', { isSignUp, email });
+    console.log('Admin auth attempt:', { email });
 
     try {
-      if (isSignUp) {
-        console.log('Attempting admin signup...');
-        // Sign up with admin role
-        const { data, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/admin-dashboard`,
-              data: {
-                role: 'admin'
-              }
-            }
-        });
+      console.log('Attempting admin signin...');
+      
+      // Use custom admin verification function
+      const { data, error: authError } = await supabase.rpc('verify_admin_credentials', {
+        input_email: email,
+        input_password: password
+      });
 
-        console.log('Signup result:', { data, authError });
+      console.log('Signin result:', { data, authError });
 
-        if (authError) throw authError;
+      if (authError) throw authError;
 
+      if ((data as any)?.success) {
+        console.log('Admin credentials verified, creating session...');
+        
+        // Create admin session in localStorage
+        const response = data as any;
+        const adminSession = {
+          user_id: response.user_id,
+          email: response.email,
+          role: response.role,
+          expires: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+        };
+        
+        localStorage.setItem('admin_session', JSON.stringify(adminSession));
+        
         toast({
           title: "Success",
-          description: "Admin account created! Please check your email to verify.",
+          description: "Admin login successful!",
         });
+        
+        navigate('/admin-dashboard');
       } else {
-        console.log('Attempting admin signin...');
-        // Sign in
-        const { data, error: authError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        console.log('Signin result:', { data, authError });
-
-        if (authError) throw authError;
-
-        if (data.user) {
-          console.log('User signed in, checking admin role...');
-          // Check if user is an admin
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('user_id', data.user.id)
-            .single();
-          
-          console.log('Profile check:', { profile, profileError });
-          
-          if (profile?.role === 'admin') {
-            console.log('Admin role verified, navigating to dashboard...');
-            navigate('/admin-dashboard');
-          } else {
-            throw new Error('Access denied. Admin privileges required.');
-          }
-        }
+        throw new Error((data as any)?.error || 'Invalid admin credentials');
       }
     } catch (err: any) {
       console.error('Admin auth error:', err);
-      setError(err.message);
+      setError(err.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -128,11 +106,11 @@ const AdminAuth = () => {
             <div>
               <CardTitle className="text-2xl">Admin Portal</CardTitle>
               <CardDescription className="text-base">
-                {isSignUp ? "Create your admin account" : "Manage the payment gateway platform"}
+                Manage the payment gateway platform
               </CardDescription>
             </div>
             <Badge variant="outline" className="text-gateway-success border-gateway-success/30 w-fit mx-auto">
-              {isSignUp ? "Create Admin Account" : "Admin Only"}
+              Admin Only
             </Badge>
           </CardHeader>
           
@@ -152,8 +130,8 @@ const AdminAuth = () => {
                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="admin-email"
-                      type="email"
-                      placeholder="admin@example.org"
+                      type="text"
+                      placeholder="admin"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -184,29 +162,18 @@ const AdminAuth = () => {
                   className="w-full"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Processing..." : (isSignUp ? "Create Admin Account" : "Admin Sign In")}
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  className="w-full"
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  disabled={isLoading}
-                >
-                  {isSignUp ? "Already have an account? Sign In" : "Need to create admin account? Sign Up"}
+                  {isLoading ? "Processing..." : "Admin Sign In"}
                 </Button>
               </form>
 
               {/* Demo Credentials */}
               <div className="p-4 bg-muted/20 rounded-lg border border-gateway-success/20">
-                <h4 className="text-sm font-medium mb-2 text-gateway-success">Demo Admin Credentials:</h4>
+                <h4 className="text-sm font-medium mb-2 text-gateway-success">Admin Credentials:</h4>
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <div>Email: admin@example.org</div>
-                  <div>Password: Admin@123</div>
+                  <div>Email: admin</div>
+                  <div>Password: Admin123</div>
                   <div className="text-gateway-success mt-2">
-                    {isSignUp ? "Use these credentials to create the admin account" : "Use these credentials to sign in"}
+                    Use these credentials to sign in
                   </div>
                 </div>
               </div>
