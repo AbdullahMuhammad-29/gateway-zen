@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AdminAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("admin@company.com");
+  const [email, setEmail] = useState("admin@example.org");
   const [password, setPassword] = useState("Admin@123");
   const [error, setError] = useState("");
   const [isSignUp, setIsSignUp] = useState(true); // Default to signup mode
@@ -54,12 +54,12 @@ const AdminAuth = () => {
         const { data, error: authError } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/admin-dashboard`,
-            data: {
-              role: 'admin'
+            options: {
+              emailRedirectTo: `${window.location.origin}/admin-dashboard`,
+              data: {
+                role: 'admin'
+              }
             }
-          }
         });
 
         console.log('Signup result:', { data, authError });
@@ -153,7 +153,7 @@ const AdminAuth = () => {
                     <Input
                       id="admin-email"
                       type="email"
-                      placeholder="admin@company.com"
+                      placeholder="admin@example.org"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -203,7 +203,7 @@ const AdminAuth = () => {
               <div className="p-4 bg-muted/20 rounded-lg border border-gateway-success/20">
                 <h4 className="text-sm font-medium mb-2 text-gateway-success">Demo Admin Credentials:</h4>
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <div>Email: admin@company.com</div>
+                  <div>Email: admin@example.org</div>
                   <div>Password: Admin@123</div>
                   <div className="text-gateway-success mt-2">
                     {isSignUp ? "Use these credentials to create the admin account" : "Use these credentials to sign in"}
